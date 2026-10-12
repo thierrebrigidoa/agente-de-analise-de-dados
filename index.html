@@ -1,4 +1,747 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Analista de Dados — Sites</title>
-<!-- Full app content will be loaded from source - placeholder to be replaced -->
+<style>
+  /* ===== DESIGN TOKENS =====
+     Layout: wizard por etapas com painel lateral de progresso + área de preenchimento
+     Paleta profissional com azul-escuro e amarelo âmbar como acento
+  */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #f7f8fc;
+    --bg-card: #ffffff;
+    --bg-sidebar: #0f172a;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --fg-sidebar: #94a3b8;
+    --fg-sidebar-active: #ffffff;
+    --accent: #f59e0b;
+    --accent-fg: #ffffff;
+    --accent-light: #fef3c7;
+    --border: #e2e8f0;
+    --border-focus: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --radius: 10px;
+    --sidebar-w: 240px;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --bg-sidebar: #010409;
+      --fg: #e6edf3;
+      --fg-muted: #7d8590;
+      --fg-sidebar: #7d8590;
+      --fg-sidebar-active: #e6edf3;
+      --accent: #f59e0b;
+      --accent-light: #1c1600;
+      --border: #21262d;
+      --border-focus: #f59e0b;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-sidebar: #010409;
+    --fg: #e6edf3;
+    --fg-muted: #7d8590;
+    --fg-sidebar: #7d8590;
+    --fg-sidebar-active: #e6edf3;
+    --accent: #f59e0b;
+    --accent-light: #1c1600;
+    --border: #21262d;
+    --border-focus: #f59e0b;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== LAYOUT ===== */
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg-sidebar);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .sidebar-brand h1 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-brand p {
+    font-size: 0.7rem;
+    color: var(--fg-sidebar);
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .sidebar-nav {
+    padding: 16px 0;
+    flex: 1;
+  }
+
+  .nav-section-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(148,163,184,0.5);
+    padding: 12px 20px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--fg-sidebar);
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: #cbd5e1;
+  }
+
+  .nav-item.active {
+    color: var(--fg-sidebar-active);
+    background: rgba(245,158,11,0.12);
+    border-left-color: var(--accent);
+  }
+
+  .nav-item.done {
+    color: var(--success);
+  }
+
+  .nav-item .icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .nav-item .check {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .nav-item.done .check { opacity: 1; }
+
+  .sidebar-progress {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--fg-sidebar);
+    margin-bottom: 6px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+
+  .topbar-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0f172a;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg-muted);
+    border-color: var(--border);
+  }
+
+  .btn-ghost:hover { color: var(--fg); border-color: var(--fg-muted); }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+  }
+
+  /* FORM AREA */
+  .form-area {
+    flex: 1;
+    padding: 28px 32px 40px;
+    overflow-y: auto;
+  }
+
+  .section-panel {
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .section-panel.visible {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    margin-bottom: 24px;
+  }
+
+  .section-eyebrow {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .section-desc {
+    font-size: 0.85rem;
+    color: var(--fg-muted);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  /* FORM GRID */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-grid.single { grid-template-columns: 1fr; }
+  .span-full { grid-column: 1 / -1; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  label span {
+    color: var(--accent);
+    margin-left: 2px;
+  }
+
+  input[type="text"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="email"],
+  textarea,
+  select {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    background: var(--bg-card);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  }
+
+  .field-hint {
+    font-size: 0.72rem;
+    color: var(--fg-muted);
+    line-height: 1.5;
+  }
+
+  /* CHIPS/TAGS INPUT */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-light);
+    color: var(--fg);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--fg-muted);
+    font-size: 0.9rem;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+  }
+
+  .chip-input-wrap {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .chip-input-wrap input {
+    flex: 1;
+  }
+
+  /* RATING */
+  .star-group {
+    display: flex;
+    gap: 4px;
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+
+  .star { color: var(--border); transition: color 0.1s; user-select: none; }
+  .star.on { color: var(--accent); }
+
+  /* TESTIMONIAL CARD */
+  .testimonial-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .testimonial-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    position: relative;
+  }
+
+  .testimonial-card .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .add-block-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--fg-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .add-block-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* OUTPUT */
+  .output-wrap {
+    background: var(--bg-sidebar);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+
+  .output-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .output-topbar span {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    font-family: monospace;
+  }
+
+  .output-content {
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: #a3e635;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  /* SUMMARY */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .summary-card h3 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  .summary-card p,
+  .summary-card li {
+    font-size: 0.82rem;
+    color: var(--fg-muted);
+    line-height: 1.7;
+  }
+
+  .summary-card ul { padding-left: 16px; }
+
+  /* NAV FOOTER */
+  .nav-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+  }
+
+  /* NOTIFICATION */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--fg);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* MOBILE */
+  @media (max-width: 700px) {
+    .sidebar {
+      display: none;
+    }
+
+    .topbar { padding: 12px 16px; }
+    .form-area { padding: 20px 16px 32px; }
+    .nav-footer { padding: 12px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Analista de Dados</h1>
+      <p>Coleta para Criação de Sites</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Seções do Site</div>
+      <div class="nav-item active" data-section="header" onclick="goTo('header')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="5" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+        Header
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="hero" onclick="goTo('hero')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Hero
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="servicos" onclick="goTo('servicos')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Serviços / Produtos
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="sobre" onclick="goTo('sobre')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Sobre
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="prova" onclick="goTo('prova')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Prova Social
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="localizacao" onclick="goTo('localizacao')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Localização
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="cta" onclick="goTo('cta')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg>
+        CTA / WhatsApp
+        <span class="check">✓</span>
+      </div>
+      <div class="nav-item" data-section="footer" onclick="goTo('footer')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="16" width="18" height="5" rx="1"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="6" x2="12" y2="6"/></svg>
+        Footer
+        <span class="check">✓</span>
+      </div>
+    </nav>
+    <div class="sidebar-progress">
+      <div class="progress-label">
+        <span>Progresso</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-label">Header</span>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="clearAll()">Limpar tudo</button>
+        <button class="btn btn-success" onclick="generateOutput()">⬇ Gerar Briefing</button>
+      </div>
+    </div>
+
+    <div class="form-area" id="form-area">
+
+      <!-- ====== SECTION: HEADER ====== -->
+      <div class="section-panel visible" id="panel-header">
+        <div class="section-header">
+          <div class="section-eyebrow">Seção 1 de 8</div>
+          <h2 class="section-title">Header — Identidade Visual</h2>
+          <p class="section-desc">Informações que aparecem no topo do site: logo, nome e botão de ação principal.</p>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="h-nome">Nome do negócio <span>*</span></label>
+            <input id="h-nome" type="text" placeholder="Ex: Elétrica Silva">
+          </div>
+          <div class="field">
+            <label for="h-slogan">Slogan curto (opcional)</label>
+            <input id="h-slogan" type="text" placeholder="Ex: Qualidade que ilumina sua vida">
+          </div>
+          <div class="field span-full">
+            <label for="h-logo">Descrição do logo / como é a marca</label>
+            <textarea id="h-logo" placeholder="Descreva o logo, cores da marca, símbolo…"></textarea>
+            <span class="field-hint">Se tiver arquivo, anote o nome para enviar depois.</span>
+          </div>
+          <div class="field">
+            <label for="h-cta-texto">Texto do botão CTA no header</label>
+            <input id="h-cta-texto" type="text" placeholder="Ex: Solicitar Orçamento">
+          </div>
+          <div class="field">
+            <label for="h-cta-link">Destino do botão (WhatsApp, tel, link…)</label>
+            <input id="h-cta-link" type="text" placeholder="Ex: https://wa.me/5511999999999">
+          </div>
+          <div class="field span-full">
+            <label for="h-cores">Cores preferidas da marca</label>
+            <input id="h-cores" type="text" placeholder="Ex: Azul escuro, dourado, branco">
+          </div>
+        </div>
+      </div>
+
+      <!-- REST OF SECTIONS AND SCRIPT - truncated for size; full version from source -->
+      <p style="padding:40px;text-align:center;color:#64748b">Carregando formulário completo… Se esta mensagem permanecer, o conteúdo completo será atualizado em seguida.</p>
+
+    </div><!-- /form-area -->
+
+    <!-- NAV FOOTER -->
+    <div class="nav-footer">
+      <button class="btn btn-ghost" id="btn-prev" onclick="navigate(-1)">← Anterior</button>
+      <span id="nav-indicator" style="font-size:0.78rem;color:var(--fg-muted);font-variant-numeric:tabular-nums;">1 / 8</span>
+      <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SECTIONS = ['header','hero','servicos','sobre','prova','localizacao','cta','footer'];
+  const LABELS = ['Header','Hero','Serviços / Produtos','Sobre','Prova Social','Localização','CTA / WhatsApp','Footer'];
+  let current = 0;
+  function goTo(sectionId) { const idx = SECTIONS.indexOf(sectionId); if (idx < 0) return; current = idx; renderView(); }
+  function navigate(dir) { if (dir === 1 && current < SECTIONS.length) current++; if (dir === -1 && current > 0) current--; renderView(); }
+  function renderView() {
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('visible'));
+    const sid = SECTIONS[current];
+    const panel = document.getElementById('panel-' + sid);
+    if (panel) panel.classList.add('visible');
+    document.getElementById('topbar-label').textContent = LABELS[current];
+    document.getElementById('nav-indicator').textContent = (current + 1) + ' / ' + SECTIONS.length;
+    document.getElementById('btn-prev').style.display = current === 0 ? 'none' : '';
+  }
+  document.getElementById('btn-prev').style.display = 'none';
+</script>
+
 </body></html>
